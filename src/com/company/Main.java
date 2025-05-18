@@ -110,6 +110,7 @@ public class Main extends JFrame {
     TUV mapUV[][] = new TUV[mapW][mapH];
     FloatBuffer texCoordB = ByteBuffer.allocateDirect(lengthOfMap * 4 * 2).order(ByteOrder.nativeOrder()).asFloatBuffer();
     int tex_pole, tex_flower, tex_flower2, tex_grass, tex_mushroom, tex_tree, tex_tree2;
+    int tex_more, tex_axolotl;
     float plant[] = {-0.5f,0,0, 0.5f,0,0, 0.5f,0,1, -0.5f,0,1,
                      0,-0.5f,0, 0,0.5f,0, 0,0.5f,1, 0,-0.5f,1};
     float plantUV[] = {0,1, 1,1, 1,0, 0,0, 0,1, 1,1, 1,0, 0,0};
@@ -779,6 +780,34 @@ public class Main extends JFrame {
                 mapUV[i][j] = new TUV();
             }
         }
+
+        IntBuffer width0 = ByteBuffer.allocateDirect(4).order(ByteOrder.nativeOrder()).asIntBuffer(),
+                height0 = ByteBuffer.allocateDirect(4).order(ByteOrder.nativeOrder()).asIntBuffer(),
+                channels0 = ByteBuffer.allocateDirect(4).order(ByteOrder.nativeOrder()).asIntBuffer();
+        //IntBuffer textureNumber = ByteBuffer.allocateDirect(4).order(ByteOrder.nativeOrder()).asIntBuffer();
+        ByteBuffer dataB0 = ByteBuffer.allocateDirect(stbi_load("./textures/more.png", width0, height0, channels0, 0).capacity()).order(ByteOrder.nativeOrder());
+
+        dataB0.put(stbi_load("./textures/more.png", width0, height0, channels0, 0));
+        dataB0.flip();
+
+        IntBuffer texture0 = ByteBuffer.allocateDirect(4).order(ByteOrder.nativeOrder()).asIntBuffer();
+
+        glGenTextures(texture0);
+
+        glBindTexture(GL_TEXTURE_2D, texture0.get());
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width0.get(), height0.get(), 0, channels0.get() == 4 ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, dataB0);
+
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        texture0.flip();
+        dataB0.flip();
+
+        tex_more = texture0.get();
 
         IntBuffer width = ByteBuffer.allocateDirect(4).order(ByteOrder.nativeOrder()).asIntBuffer(),
                 height = ByteBuffer.allocateDirect(4).order(ByteOrder.nativeOrder()).asIntBuffer(),
