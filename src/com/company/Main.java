@@ -75,32 +75,44 @@ public class Main extends JFrame {
 
     int windowX = 1920;
     int windowY = 1080;
-    int mapW = 425;
-    int mapH = 425;
+    int mapW = 600;
+    int mapH = 600;
+    int moreX1 = 0;
+    int moreY1 = mapH - 100;
+    int moreX2 = mapW;
+    int moreY2 = mapH;
     int lengthOfMap = mapW * mapH;
     int ObjListCnt = 255;
 
     TCell[][] map = new TCell[mapW][mapH];
     TCell[][] mapNormal = new TCell[mapW][mapH];
     TColor[][] mapCol = new TColor[mapW][mapH];
-    int[][][] mapInd = new int[mapW-1][mapH-1][6];
+    int[][][] mapInd = new int[mapW-1][mapH-100][6];
+    TCell[][] beach = new TCell[mapW][mapH];
+    TCell[][] beachNormal = new TCell[mapW][mapH];
+    TColor[][] beachCol = new TColor[mapW][mapH];
+    int[] beachInd = {0,1,2, 2,3,0};
+
     TSelectObj selectMas[] = new TSelectObj[ObjListCnt];
     int selectMasCnt = 0;
     //int mapIndCnt = ;
 
-    int plantMasCnt = 9600;
+    int plantMasCnt = 4000;
     TObject plantMas[] = new TObject[plantMasCnt];
 
     FloatBuffer mapBuffer = ByteBuffer.allocateDirect(lengthOfMap * 4 * 3).order(ByteOrder.nativeOrder()).asFloatBuffer();
     FloatBuffer mapColBuffer = ByteBuffer.allocateDirect(lengthOfMap * 4 * 3).order(ByteOrder.nativeOrder()).asFloatBuffer();
-    IntBuffer mapIndBuffer = ByteBuffer.allocateDirect((mapW - 1) * (mapH - 1) * 6 * 4).order(ByteOrder.nativeOrder()).asIntBuffer();
+    IntBuffer mapIndBuffer = ByteBuffer.allocateDirect((mapW - 1) * (mapH - 1 - 100) * 6 * 4).order(ByteOrder.nativeOrder()).asIntBuffer();
+    FloatBuffer beachBuffer = ByteBuffer.allocateDirect(lengthOfMap * 4 * 3).order(ByteOrder.nativeOrder()).asFloatBuffer();
+    FloatBuffer beachColBuffer = ByteBuffer.allocateDirect(lengthOfMap * 4 * 3).order(ByteOrder.nativeOrder()).asFloatBuffer();
+    IntBuffer beachIndBuffer = ByteBuffer.allocateDirect((mapW - (mapW - 1)) * (mapH - (mapH - 1 - 100))* 4).order(ByteOrder.nativeOrder()).asIntBuffer();
     DoubleBuffer curXBuffer = ByteBuffer.allocateDirect(8).order(ByteOrder.nativeOrder()).asDoubleBuffer();
     DoubleBuffer curYBuffer = ByteBuffer.allocateDirect(8).order(ByteOrder.nativeOrder()).asDoubleBuffer();
     IntBuffer Xbuffer = ByteBuffer.allocateDirect(4).order(ByteOrder.nativeOrder()).asIntBuffer();
     IntBuffer Ybuffer = ByteBuffer.allocateDirect(4).order(ByteOrder.nativeOrder()).asIntBuffer();
     IntBuffer curXWindowbuffer = ByteBuffer.allocateDirect(4).order(ByteOrder.nativeOrder()).asIntBuffer();
     IntBuffer curYWindowbuffer = ByteBuffer.allocateDirect(4).order(ByteOrder.nativeOrder()).asIntBuffer();
-    SCamera camera = new SCamera(mapW / 2, mapH / 2, 20, 0, 0);
+    SCamera camera = new SCamera(mapW - 55, mapH - 100, 20, 0, 0);
     boolean pressedOrNot = true;
     int hillTestX = mapW / 2;
     int hillTestY = mapH / 2;
@@ -110,7 +122,7 @@ public class Main extends JFrame {
     TUV mapUV[][] = new TUV[mapW][mapH];
     FloatBuffer texCoordB = ByteBuffer.allocateDirect(lengthOfMap * 4 * 2).order(ByteOrder.nativeOrder()).asFloatBuffer();
     int tex_pole, tex_flower, tex_flower2, tex_grass, tex_mushroom, tex_tree, tex_tree2;
-    int tex_more, tex_axolotl;
+    int tex_more, tex_axolotl, tex_pesok;
     float plant[] = {-0.5f,0,0, 0.5f,0,0, 0.5f,0,1, -0.5f,0,1,
                      0,-0.5f,0, 0,0.5f,0, 0,0.5f,1, 0,-0.5f,1};
     float plantUV[] = {0,1, 1,1, 1,0, 0,0, 0,1, 1,1, 1,0, 0,0};
@@ -122,6 +134,7 @@ public class Main extends JFrame {
     boolean selectMode = false;
     float alfa = 0;
     float zKcc = 1.7f;
+    float dayKcc = 1f;
 
     boolean IsCoordInMap(float x, float y)
     {
@@ -170,7 +183,7 @@ public class Main extends JFrame {
         float k = x / (float) y;
         float sz = 0.1f;
         glLoadIdentity();
-        glFrustum(-k*sz, k*sz, -sz, sz, sz*2, 180);
+        glFrustum(-k*sz, k*sz, -sz, sz, sz*2, 120);
     }
 
     void fillMapAndMapColAndMapInd()
@@ -191,12 +204,29 @@ public class Main extends JFrame {
             }
         }
         for (int i = 0; i < mapW - 1; i++) {
-            for (int j = 0; j < mapH - 1; j++) {
+            for (int j = 0; j < mapH - 1-100; j++) {
                 for (int k = 0; k < 6; k++) {
                     mapIndBuffer.put(mapInd[i][j][k]);
                 }
             }
         }
+
+        for (int i = 0; i < (mapW - (mapW - 1)); i++) {
+            for (int j = 0; j < (mapH - (mapH - 1 - 100)); j++) {
+                beachBuffer.put(map[i][j].x);
+                beachBuffer.put(map[i][j].y);
+                beachBuffer.put(map[i][j].z);
+
+                beachColBuffer.put(mapCol[i][j].r);
+                beachColBuffer.put(mapCol[i][j].g);
+                beachColBuffer.put(mapCol[i][j].b);
+            }
+        }
+
+        for (int i = 0; i < (mapW - (mapW - 1)); i++) {
+            beachIndBuffer.put(beachInd[i]);
+        }
+
         for (int i = 0; i < mapW; i++) {
             for (int j = 0; j < mapH; j++) {
                 texCoordB.put(mapUV[i][j].u);
@@ -223,6 +253,8 @@ public class Main extends JFrame {
         mapBuffer.flip();
         mapIndBuffer.flip();
         mapColBuffer.flip();
+        beachBuffer.flip();
+        beachIndBuffer.flip();
     }
 
     void cmApply()
@@ -301,7 +333,7 @@ public class Main extends JFrame {
 
                 map[i][j].x = i;
                 map[i][j].y = j;
-                map[i][j].z = (float) Math.random() * 0.2f;
+                map[i][j].z = (float) Math.random() * 0.07f;
 
                 mapUV[i][j].u = i;
                 mapUV[i][j].v = j;
@@ -311,7 +343,7 @@ public class Main extends JFrame {
         for (int i = 0; i < mapW-1; i++)
         {
             int pos = i * mapH;
-            for (int j = 0; j < mapH-1; j++)
+            for (int j = 0; j < mapH-1-100; j++)
             {
                 mapInd[i][j][0] = pos;
                 mapInd[i][j][1] = pos + 1;
@@ -328,11 +360,19 @@ public class Main extends JFrame {
                 int posX = (int) (Math.random() * mapW);
                 int posY = (int) (Math.random() * mapH);
              */
+            for (int col = 0; col <= 720; col+=10) {
+                mpCreateHill(mapW - 55 - col, mapH - 100, (int) (Math.random() * 50), hillHeight / 10);
+            }
+            for (int col = 10; col <= 55; col+=5) {
+                mpCreateHill(mapW - col, mapH - 100, (int) (Math.random() * 25), hillHeight / 30);
+            }
+                /*
                 mpCreateHill(mapW / 2, mapH / 2, (int) (Math.random() * 50), hillHeight);
                 mpCreateHill(mapW / 2 - 25, mapH / 2, (int) (Math.random() * 50), hillHeight);
                 mpCreateHill(mapW / 2 + 25, mapH / 2, (int) (Math.random() * 50), hillHeight);
                 mpCreateHill(mapW / 2, mapH / 2 - 25, (int) (Math.random() * 50), hillHeight);
                 mpCreateHill(mapW / 2, mapH / 2 + 25, (int) (Math.random() * 50), hillHeight);
+                */
             //}
         }
 
@@ -357,14 +397,14 @@ public class Main extends JFrame {
         }
          */
 
-        int travaN = 4000;
-        int gribN = 500;
+        int travaN = 1000;
+        int gribN = 200;
         int flowerN = 200;
         for (int i = 0; i < plantMasCnt; i++) {
             if (i < travaN)
             {
                 plantMas[i].type = tex_grass;
-                plantMas[i].scale = (float) (0.7f + (Math.random() * 5) * 0.3f);
+                plantMas[i].scale = (float) (0.7f + (Math.random() * 5) * 0.1f);
             }
             else if (i < (travaN + flowerN))
             {
@@ -379,19 +419,19 @@ public class Main extends JFrame {
             else
             {
                 int rand = (int) (Math.random() * 11);
-                if (rand % 2 == 0)
+                if (rand % 17 == 0)
                 {
                     plantMas[i].type = tex_tree2;
                     plantMas[i].scale = (float) (4 + (Math.random() * 14));
                 }
-                if (rand % 2 != 0)
+                if (rand % 19 == 0)
                 {
                     plantMas[i].type = tex_tree;
                     plantMas[i].scale = (float) (4 + (Math.random() * 14));
                 }
             }
-            plantMas[i].x = (float) (Math.random() * mapW);
-            plantMas[i].y = (float) (Math.random() * mapH);
+            plantMas[i].x = (float) (Math.random() * (mapW-60));
+            plantMas[i].y = (float) (Math.random() * (mapH-100));
             plantMas[i].z = mpGetHeight(plantMas[i].x, plantMas[i].y);
         }
         for (int i = 0; i < mapW-1; i++)
@@ -401,6 +441,7 @@ public class Main extends JFrame {
 
     void mpShow()
     {
+        boolean dayOrNight = true;
         alfa += 0.3f;
         if (alfa > 180) alfa -= 360;
 
@@ -412,6 +453,7 @@ public class Main extends JFrame {
             glEnableClientState(GL_VERTEX_ARRAY);
             glEnableClientState(GL_TEXTURE_COORD_ARRAY);
             //glEnableClientState(GL_COLOR_ARRAY);
+            // мапа
             glVertexPointer(3, GL_FLOAT, 0, mapBuffer);
             glTexCoordPointer(2, GL_FLOAT, 0, texCoordB);
             //glColorPointer(3, GL_FLOAT, 0, mapColBuffer);
@@ -419,7 +461,6 @@ public class Main extends JFrame {
             glDrawElements(GL_TRIANGLES, mapIndBuffer);
             glDisableClientState(GL_VERTEX_ARRAY);
             glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-            //glDisableClientState(GL_COLOR_ARRAY);
         }
 
         glEnableClientState(GL_VERTEX_ARRAY);
@@ -429,6 +470,7 @@ public class Main extends JFrame {
         glTexCoordPointer(2, GL_FLOAT, 0, plantUVBuffer);
         //glColorPointer(3, GL_FLOAT, 0, mapColBuffer);
         glNormal3f(0, 0, 1);
+        glColor3f((float) 0.8, (float) 0.8, (float) 0.8);
         selectMasCnt = 0;
         int selectColor = 1;
         for (int i = 0; i < plantMasCnt; i++)
@@ -459,6 +501,14 @@ public class Main extends JFrame {
                 glDrawElements(GL_TRIANGLES, plantIndBuffer);
                 glPopMatrix();
         }
+        //glColorPointer(3, GL_FLOAT, 0, mapColBuffer);
+        glBindTexture(GL_TEXTURE_2D, tex_more);
+        glPushMatrix();
+            glTranslatef(camera.x - 2, camera.y - 2, mpGetHeight(camera.x-2, camera.y-2));
+            glRotatef(-camera.Zrot, 0, 0, 1);
+            glScalef(3, 3, 4);
+            glDrawElements(GL_TRIANGLES, beachIndBuffer);
+        glPopMatrix();
         glDisableClientState(GL_VERTEX_ARRAY);
         glDisableClientState(GL_TEXTURE_COORD_ARRAY);
         //glDisableClientState(GL_COLOR_ARRAY);
@@ -714,13 +764,14 @@ public class Main extends JFrame {
         glfwDefaultWindowHints(); // optional, the current window hints are already the default
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+        glfwWindowHint(GLFW_SAMPLES, 4);
         //glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
         //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE); // the window will stay hidden after creation
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE); // the window will be resizable
 
         // Create the window
-        window = glfwCreateWindow(windowX, windowY, "Mineshift", NULL, NULL);
+        window = glfwCreateWindow(windowX, windowY, "Музей развития человечества", NULL, NULL);
         if ( window == NULL )
             throw new RuntimeException("Failed to create the GLFW window");
 
@@ -729,6 +780,7 @@ public class Main extends JFrame {
             if ( key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE )
                 glfwSetWindowShouldClose(window, true); // We will detect this in the rendering loop
         });
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
         // Get the thread stack and push a new frame
         try ( MemoryStack stack = stackPush() ) {
@@ -749,6 +801,8 @@ public class Main extends JFrame {
             );
         } // the stack frame is popped automatically
         //glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0, windowX, windowY, 160);
+
+
 
         // Make the OpenGL context current
         glfwMakeContextCurrent(window);
@@ -785,9 +839,9 @@ public class Main extends JFrame {
                 height0 = ByteBuffer.allocateDirect(4).order(ByteOrder.nativeOrder()).asIntBuffer(),
                 channels0 = ByteBuffer.allocateDirect(4).order(ByteOrder.nativeOrder()).asIntBuffer();
         //IntBuffer textureNumber = ByteBuffer.allocateDirect(4).order(ByteOrder.nativeOrder()).asIntBuffer();
-        ByteBuffer dataB0 = ByteBuffer.allocateDirect(stbi_load("./textures/more.png", width0, height0, channels0, 0).capacity()).order(ByteOrder.nativeOrder());
+        ByteBuffer dataB0 = ByteBuffer.allocateDirect(stbi_load("./textures/voda.png", width0, height0, channels0, 0).capacity()).order(ByteOrder.nativeOrder());
 
-        dataB0.put(stbi_load("./textures/more.png", width0, height0, channels0, 0));
+        dataB0.put(stbi_load("./textures/voda.png", width0, height0, channels0, 0));
         dataB0.flip();
 
         IntBuffer texture0 = ByteBuffer.allocateDirect(4).order(ByteOrder.nativeOrder()).asIntBuffer();
@@ -1006,12 +1060,69 @@ public class Main extends JFrame {
 
         tex_tree2 = texture6.get();
 
+        IntBuffer width7 = ByteBuffer.allocateDirect(4).order(ByteOrder.nativeOrder()).asIntBuffer(),
+                height7 = ByteBuffer.allocateDirect(4).order(ByteOrder.nativeOrder()).asIntBuffer(),
+                channels7 = ByteBuffer.allocateDirect(4).order(ByteOrder.nativeOrder()).asIntBuffer();
+        //IntBuffer textureNumber = ByteBuffer.allocateDirect(4).order(ByteOrder.nativeOrder()).asIntBuffer();
+        ByteBuffer dataB7 = ByteBuffer.allocateDirect(stbi_load("./textures/modal-generated-image.jpeg", width7, height7, channels7, 0).capacity()).order(ByteOrder.nativeOrder());
+
+        dataB7.put(stbi_load("./textures/modal-generated-image.jpeg", width7, height7, channels7, 0));
+        dataB7.flip();
+
+        IntBuffer texture7 = ByteBuffer.allocateDirect(4).order(ByteOrder.nativeOrder()).asIntBuffer();
+
+        glGenTextures(texture7);
+
+        glBindTexture(GL_TEXTURE_2D, texture7.get());
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width7.get(), height7.get(), 0, channels7.get() == 4 ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, dataB7);
+
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        texture7.flip();
+        dataB7.flip();
+
+        tex_axolotl = texture7.get();
+
+        IntBuffer width8 = ByteBuffer.allocateDirect(4).order(ByteOrder.nativeOrder()).asIntBuffer(),
+                height8 = ByteBuffer.allocateDirect(4).order(ByteOrder.nativeOrder()).asIntBuffer(),
+                channels8 = ByteBuffer.allocateDirect(4).order(ByteOrder.nativeOrder()).asIntBuffer();
+        //IntBuffer textureNumber = ByteBuffer.allocateDirect(4).order(ByteOrder.nativeOrder()).asIntBuffer();
+        ByteBuffer dataB8 = ByteBuffer.allocateDirect(stbi_load("./textures/pesok.jpg", width8, height8, channels8, 0).capacity()).order(ByteOrder.nativeOrder());
+
+        dataB8.put(stbi_load("./textures/pesok.jpg", width8, height8, channels8, 0));
+        dataB8.flip();
+
+        IntBuffer texture8 = ByteBuffer.allocateDirect(4).order(ByteOrder.nativeOrder()).asIntBuffer();
+
+        glGenTextures(texture8);
+
+        glBindTexture(GL_TEXTURE_2D, texture8.get());
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width8.get(), height8.get(), 0, channels8.get() == 4 ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, dataB8);
+
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        texture8.flip();
+        dataB8.flip();
+
+        tex_pesok = texture8.get();
+
 
         mpInit();
         fillMapAndMapColAndMapInd();
 
         glEnable(GL_DEPTH_TEST);
-
 
         // Run the rendering loop until the user has attempted to close
         // the window or has pressed the ESCAPE key.
